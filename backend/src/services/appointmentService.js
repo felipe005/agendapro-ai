@@ -1,7 +1,7 @@
 import { AppointmentStatus } from "@prisma/client";
 import { prisma } from "../prisma/client.js";
 import { ApiError } from "../utils/ApiError.js";
-import { getDayRange, mergeDateAndTime } from "../utils/date.js";
+import { getDayRange, getWeekdayFromDate, mergeDateAndTime, timeToMinutes } from "../utils/date.js";
 
 const validStatuses = Object.values(AppointmentStatus);
 
@@ -19,7 +19,7 @@ const normalizeStatus = (status) => {
   return normalized;
 };
 
-const validatePayload = ({ clientId, date, time, serviceName }) => {
+const validatePayload = ({ clientId, date, time, serviceName, serviceId }) => {
   if (!clientId) {
     throw new ApiError(400, "Cliente e obrigatorio.");
   }
@@ -28,7 +28,7 @@ const validatePayload = ({ clientId, date, time, serviceName }) => {
     throw new ApiError(400, "Data e hora sao obrigatorias.");
   }
 
-  if (!serviceName?.trim()) {
+  if (!serviceName?.trim() && !serviceId) {
     throw new ApiError(400, "Servico e obrigatorio.");
   }
 };
@@ -47,18 +47,47 @@ export const appointmentService = {
   async create(userId, data) {
     validatePayload(data);
     await ensureClientOwnership(userId, data.clientId);
+    const service = data.serviceId
+      ? await prisma.service.findFirst({
+          where: { id: data.serviceId, userId, isActive: true }
+        })
+      : null;
+    const weekday = getWeekdayFromDate(data.date);
+    const businessHour = await prisma.businessHour.findUnique({
+      where: {
+        userId_weekday: {
+          userId,
+          weekday
+        }
+      }
+    });
+
+    if (!businessHour?.isOpen) {
+      throw new ApiError(400, "A empresa nao atende neste dia.");
+    }
+
+    const appointmentTime = timeToMinutes(data.time);
+    if (
+      appointmentTime < timeToMinutes(businessHour.startTime) ||
+      appointmentTime >= timeToMinutes(businessHour.endTime)
+    ) {
+      throw new ApiError(400, "Horario fora do funcionamento da empresa.");
+    }
 
     return prisma.appointment.create({
       data: {
         userId,
         clientId: data.clientId,
-        serviceName: data.serviceName.trim(),
+        serviceId: service?.id || null,
+        serviceName: service?.name || data.serviceName.trim(),
+        price: service?.price ?? (data.price !== undefined ? Number(data.price) : null),
         scheduledAt: mergeDateAndTime(data.date, data.time),
         status: normalizeStatus(data.status),
         notes: data.notes?.trim() || null
       },
       include: {
-        client: true
+        client: true,
+        service: true
       }
     });
   },
@@ -75,7 +104,8 @@ export const appointmentService = {
         }
       },
       include: {
-        client: true
+        client: true,
+        service: true
       },
       orderBy: {
         scheduledAt: "asc"
@@ -95,18 +125,47 @@ export const appointmentService = {
     }
 
     await ensureClientOwnership(userId, data.clientId);
+    const service = data.serviceId
+      ? await prisma.service.findFirst({
+          where: { id: data.serviceId, userId, isActive: true }
+        })
+      : null;
+    const weekday = getWeekdayFromDate(data.date);
+    const businessHour = await prisma.businessHour.findUnique({
+      where: {
+        userId_weekday: {
+          userId,
+          weekday
+        }
+      }
+    });
+
+    if (!businessHour?.isOpen) {
+      throw new ApiError(400, "A empresa nao atende neste dia.");
+    }
+
+    const appointmentTime = timeToMinutes(data.time);
+    if (
+      appointmentTime < timeToMinutes(businessHour.startTime) ||
+      appointmentTime >= timeToMinutes(businessHour.endTime)
+    ) {
+      throw new ApiError(400, "Horario fora do funcionamento da empresa.");
+    }
 
     return prisma.appointment.update({
       where: { id: appointmentId },
       data: {
         clientId: data.clientId,
-        serviceName: data.serviceName.trim(),
+        serviceId: service?.id || null,
+        serviceName: service?.name || data.serviceName.trim(),
+        price: service?.price ?? (data.price !== undefined ? Number(data.price) : appointment.price),
         scheduledAt: mergeDateAndTime(data.date, data.time),
         status: normalizeStatus(data.status),
         notes: data.notes?.trim() || null
       },
       include: {
-        client: true
+        client: true,
+        service: true
       }
     });
   },
@@ -126,9 +185,9 @@ export const appointmentService = {
         status: AppointmentStatus.CANCELED
       },
       include: {
-        client: true
+        client: true,
+        service: true
       }
     });
   }
 };
-

@@ -25,6 +25,18 @@ export const Sidebar = () => {
         <NavLink className={linkClass} to="/agenda">
           Agenda
         </NavLink>
+        <NavLink className={linkClass} to="/servicos">
+          Serviços
+        </NavLink>
+        <NavLink className={linkClass} to="/empresa">
+          Empresa
+        </NavLink>
+        <NavLink className={linkClass} to="/caixa">
+          Caixa
+        </NavLink>
+        <NavLink className={linkClass} to="/insights">
+          Insights
+        </NavLink>
       </nav>
     </aside>
   );

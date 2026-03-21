@@ -5,6 +5,8 @@ import { AuthLayout } from "../layouts/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
 
 const initialForm = {
+  ownerName: "",
+  companyName: "",
   email: "",
   password: ""
 };
@@ -52,6 +54,34 @@ export const LoginPage = () => {
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          {mode === "register" && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm text-slate-300">Seu nome</label>
+                <input
+                  type="text"
+                  value={form.ownerName}
+                  onChange={(e) => setForm((current) => ({ ...current, ownerName: e.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white"
+                  placeholder="Seu nome"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm text-slate-300">Nome da empresa</label>
+                <input
+                  type="text"
+                  value={form.companyName}
+                  onChange={(e) => setForm((current) => ({ ...current, companyName: e.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white"
+                  placeholder="Ex.: Studio Letícia Beauty"
+                  required
+                />
+              </div>
+            </>
+          )}
+
           <div>
             <label className="mb-2 block text-sm text-slate-300">Email</label>
             <input

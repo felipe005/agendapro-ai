@@ -2,12 +2,19 @@ import { useEffect, useState } from "react";
 import { http } from "../api/http";
 import { Panel } from "../components/Panel";
 import { useAuth } from "../hooks/useAuth";
-import { formatDateTime, getTodayInput } from "../utils/formatters";
+import {
+  formatCurrency,
+  formatDateTime,
+  getTodayInput,
+  toDateInputValue,
+  toTimeInputValue
+} from "../utils/formatters";
 
 const initialForm = {
   clientId: "",
   date: getTodayInput(),
   time: "09:00",
+  serviceId: "",
   serviceName: "",
   status: "PENDING",
   notes: ""
@@ -22,20 +29,33 @@ const statusLabels = {
 export const AgendaPage = () => {
   const { token } = useAuth();
   const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [businessHour, setBusinessHour] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getTodayInput());
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const loadClients = async () => {
+  const selectedService = services.find((service) => service.id === form.serviceId);
+
+  const loadBase = async () => {
     try {
-      const data = await http.request("/clients", { token });
-      setClients(data);
-      if (!form.clientId && data.length) {
-        setForm((current) => ({ ...current, clientId: data[0].id }));
-      }
+      const [clientsData, servicesData] = await Promise.all([
+        http.request("/clients", { token }),
+        http.request("/services", { token })
+      ]);
+
+      setClients(clientsData);
+      setServices(servicesData.filter((service) => service.isActive));
+
+      setForm((current) => ({
+        ...current,
+        clientId: current.clientId || clientsData[0]?.id || "",
+        serviceId: current.serviceId || servicesData.find((service) => service.isActive)?.id || ""
+      }));
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -50,21 +70,57 @@ export const AgendaPage = () => {
     }
   };
 
+  const loadAvailability = async (date) => {
+    try {
+      const data = await http.request(`/company/availability?date=${date}`, { token });
+      setAvailableSlots(data.slots || []);
+      setBusinessHour(data.businessHour);
+
+      setForm((current) => {
+        const nextTime = editingId
+          ? current.time
+          : data.slots?.includes(current.time)
+            ? current.time
+            : data.slots?.[0] || "";
+
+        return {
+          ...current,
+          time: nextTime
+        };
+      });
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
   useEffect(() => {
-    loadClients();
+    loadBase();
   }, []);
 
   useEffect(() => {
     loadAppointments(selectedDate);
+    loadAvailability(selectedDate);
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (selectedService) {
+      setForm((current) => ({
+        ...current,
+        serviceName: selectedService.name
+      }));
+    }
+  }, [form.serviceId, selectedService]);
 
   const resetForm = () => {
     setEditingId(null);
-    setForm((current) => ({
+    setForm({
       ...initialForm,
       clientId: clients[0]?.id || "",
-      date: selectedDate
-    }));
+      serviceId: services[0]?.id || "",
+      serviceName: services[0]?.name || "",
+      date: selectedDate,
+      time: availableSlots[0] || ""
+    });
   };
 
   const handleSubmit = async (event) => {
@@ -73,37 +129,42 @@ export const AgendaPage = () => {
     setError("");
 
     try {
+      const payload = {
+        ...form,
+        price: selectedService?.price ?? undefined
+      };
+
       if (editingId) {
         await http.request(`/appointments/${editingId}`, {
           method: "PUT",
           token,
-          body: JSON.stringify(form)
+          body: JSON.stringify(payload)
         });
         setMessage("Agendamento atualizado com sucesso.");
       } else {
         await http.request("/appointments", {
           method: "POST",
           token,
-          body: JSON.stringify(form)
+          body: JSON.stringify(payload)
         });
         setMessage("Agendamento criado com sucesso.");
       }
 
       resetForm();
       loadAppointments(selectedDate);
+      loadAvailability(selectedDate);
     } catch (submitError) {
       setError(submitError.message);
     }
   };
 
   const handleEdit = (appointment) => {
-    const date = new Date(appointment.scheduledAt);
-
     setEditingId(appointment.id);
     setForm({
       clientId: appointment.clientId,
-      date: date.toISOString().split("T")[0],
-      time: date.toISOString().slice(11, 16),
+      date: toDateInputValue(appointment.scheduledAt),
+      time: toTimeInputValue(appointment.scheduledAt),
+      serviceId: appointment.serviceId || "",
       serviceName: appointment.serviceName,
       status: appointment.status,
       notes: appointment.notes || ""
@@ -118,16 +179,17 @@ export const AgendaPage = () => {
       });
       setMessage("Agendamento cancelado.");
       loadAppointments(selectedDate);
+      loadAvailability(selectedDate);
     } catch (requestError) {
       setError(requestError.message);
     }
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+    <div className="grid gap-6 xl:grid-cols-[440px_1fr]">
       <Panel
         title={editingId ? "Editar agendamento" : "Novo agendamento"}
-        subtitle="Organize horários, serviços e acompanhe o status de cada atendimento."
+        subtitle="Escolha o serviço, respeite o horário da empresa e acompanhe cada atendimento."
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <select
@@ -148,26 +210,51 @@ export const AgendaPage = () => {
             <input
               type="date"
               value={form.date}
-              onChange={(e) => setForm((current) => ({ ...current, date: e.target.value }))}
+              onChange={(e) => {
+                const date = e.target.value;
+                setSelectedDate(date);
+                setForm((current) => ({ ...current, date }));
+              }}
               className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white"
               required
             />
-            <input
-              type="time"
+
+            <select
               value={form.time}
               onChange={(e) => setForm((current) => ({ ...current, time: e.target.value }))}
               className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white"
               required
-            />
+              disabled={!availableSlots.length && !editingId}
+            >
+              <option value="">{businessHour?.isOpen ? "Selecione um horário" : "Empresa fechada"}</option>
+              {availableSlots.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <input
-            value={form.serviceName}
-            onChange={(e) => setForm((current) => ({ ...current, serviceName: e.target.value }))}
+          <select
+            value={form.serviceId}
+            onChange={(e) => {
+              const service = services.find((item) => item.id === e.target.value);
+              setForm((current) => ({
+                ...current,
+                serviceId: e.target.value,
+                serviceName: service?.name || ""
+              }));
+            }}
             className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white"
-            placeholder="Serviço"
             required
-          />
+          >
+            <option value="">Selecione um serviço</option>
+            {services.map((service) => (
+              <option key={service.id} value={service.id}>
+                {service.name} · {formatCurrency(service.price)} · {service.durationMin} min
+              </option>
+            ))}
+          </select>
 
           <select
             value={form.status}
@@ -185,6 +272,22 @@ export const AgendaPage = () => {
             className="min-h-28 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white"
             placeholder="Observações opcionais"
           />
+
+          {selectedService && (
+            <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 text-sm text-slate-300">
+              <p className="font-semibold text-white">{selectedService.name}</p>
+              <p className="mt-1">Valor: {formatCurrency(selectedService.price)}</p>
+              <p>Duração: {selectedService.durationMin} min</p>
+              {selectedService.description && <p className="mt-1 text-slate-400">{selectedService.description}</p>}
+            </div>
+          )}
+
+          {businessHour && (
+            <p className="text-sm text-slate-400">
+              Horário disponível no dia:{" "}
+              {businessHour.isOpen ? `${businessHour.startTime} às ${businessHour.endTime}` : "empresa fechada"}
+            </p>
+          )}
 
           {message && <p className="rounded-2xl bg-brand-500/10 p-4 text-sm text-brand-200">{message}</p>}
           {error && <p className="rounded-2xl bg-red-500/10 p-4 text-sm text-red-200">{error}</p>}
@@ -240,6 +343,7 @@ export const AgendaPage = () => {
                     </div>
                     <p className="mt-2 text-sm text-slate-300">{appointment.serviceName}</p>
                     <p className="text-sm text-slate-400">{formatDateTime(appointment.scheduledAt)}</p>
+                    <p className="text-sm text-brand-200">{formatCurrency(appointment.price)}</p>
                     {appointment.notes && <p className="mt-2 text-sm text-slate-400">{appointment.notes}</p>}
                   </div>
 

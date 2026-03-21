@@ -5,6 +5,10 @@ import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ClientsPage } from "./pages/ClientsPage";
 import { AgendaPage } from "./pages/AgendaPage";
+import { ServicesPage } from "./pages/ServicesPage";
+import { CompanyPage } from "./pages/CompanyPage";
+import { FinancePage } from "./pages/FinancePage";
+import { InsightsPage } from "./pages/InsightsPage";
 import { useAuth } from "./hooks/useAuth";
 
 const LoginRoute = () => {
@@ -32,6 +36,10 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="clientes" element={<ClientsPage />} />
         <Route path="agenda" element={<AgendaPage />} />
+        <Route path="servicos" element={<ServicesPage />} />
+        <Route path="empresa" element={<CompanyPage />} />
+        <Route path="caixa" element={<FinancePage />} />
+        <Route path="insights" element={<InsightsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

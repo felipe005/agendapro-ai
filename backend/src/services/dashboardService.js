@@ -7,7 +7,7 @@ export const dashboardService = {
     const { start, end } = getDayRange();
     const now = new Date();
 
-    const [todayAppointments, upcomingAppointments] = await Promise.all([
+    const [todayAppointments, upcomingAppointments, activeClients, monthlyAppointments] = await Promise.all([
       prisma.appointment.count({
         where: {
           userId,
@@ -31,19 +31,40 @@ export const dashboardService = {
           }
         },
         include: {
-          client: true
+          client: true,
+          service: true
         },
         orderBy: {
           scheduledAt: "asc"
         },
         take: 5
+      }),
+      prisma.client.count({
+        where: { userId }
+      }),
+      prisma.appointment.findMany({
+        where: {
+          userId,
+          scheduledAt: {
+            gte: new Date(now.getFullYear(), now.getMonth(), 1)
+          },
+          status: {
+            not: AppointmentStatus.CANCELED
+          }
+        }
       })
     ]);
 
+    const monthlyRevenue = monthlyAppointments.reduce(
+      (sum, appointment) => sum + Number(appointment.price || 0),
+      0
+    );
+
     return {
       todayAppointments,
-      upcomingAppointments
+      upcomingAppointments,
+      activeClients,
+      monthlyRevenue
     };
   }
 };
-

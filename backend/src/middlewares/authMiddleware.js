@@ -15,7 +15,15 @@ export const authMiddleware = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, email: true }
+      select: {
+        id: true,
+        email: true,
+        ownerName: true,
+        companyName: true,
+        businessType: true,
+        businessPhone: true,
+        timezone: true
+      }
     });
 
     if (!user) {
@@ -28,4 +36,3 @@ export const authMiddleware = async (req, res, next) => {
     return res.status(401).json({ message: "Token invalido ou expirado." });
   }
 };
-

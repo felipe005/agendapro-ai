@@ -3,13 +3,15 @@ import { http } from "../api/http";
 import { Panel } from "../components/Panel";
 import { StatCard } from "../components/StatCard";
 import { useAuth } from "../hooks/useAuth";
-import { formatDateTime } from "../utils/formatters";
+import { formatCurrency, formatDateTime } from "../utils/formatters";
 
 export const DashboardPage = () => {
   const { token } = useAuth();
   const [summary, setSummary] = useState({
     todayAppointments: 0,
-    upcomingAppointments: []
+    upcomingAppointments: [],
+    activeClients: 0,
+    monthlyRevenue: 0
   });
   const [error, setError] = useState("");
 
@@ -38,6 +40,16 @@ export const DashboardPage = () => {
           title="Próximos agendamentos"
           value={summary.upcomingAppointments.length}
           hint="Os 5 próximos horários ativos aparecem abaixo."
+        />
+        <StatCard
+          title="Clientes ativos"
+          value={summary.activeClients}
+          hint="Quantidade total de clientes cadastrados na base."
+        />
+        <StatCard
+          title="Faturamento do mês"
+          value={formatCurrency(summary.monthlyRevenue)}
+          hint="Total previsto a partir dos agendamentos não cancelados."
         />
       </section>
 
