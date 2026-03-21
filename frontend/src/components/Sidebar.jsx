@@ -12,7 +12,7 @@ export const Sidebar = () => {
     <aside className="w-full rounded-3xl border border-white/10 bg-slate-900/70 p-4 shadow-panel backdrop-blur xl:w-72">
       <div className="mb-8 rounded-3xl bg-gradient-to-br from-brand-400 to-brand-700 p-5 text-slate-950">
         <p className="text-sm font-semibold uppercase tracking-[0.3em]">AgendaPro AI</p>
-        <h1 className="mt-3 text-2xl font-bold">Seu salao mais organizado e pronto para crescer.</h1>
+        <h1 className="mt-3 text-2xl font-bold">Seu salão mais organizado e pronto para crescer.</h1>
       </div>
 
       <nav className="flex flex-col gap-2">
@@ -29,4 +29,3 @@ export const Sidebar = () => {
     </aside>
   );
 };
-

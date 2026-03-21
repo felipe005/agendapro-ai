@@ -6,13 +6,13 @@ export const AuthLayout = ({ children }) => {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em]">AgendaPro AI</p>
             <h1 className="mt-6 max-w-md text-5xl font-black leading-tight">
-              Organize o salao, encante clientes e prepare a base para automacao.
+              Organize o salão, encante clientes e prepare a base para automação.
             </h1>
           </div>
 
           <div className="max-w-md rounded-3xl bg-black/20 p-6 text-slate-100">
             <p className="text-sm">
-              Um sistema pensado para negocio real: atendimento do dia, clientes recorrentes e agenda pronta para crescer com SaaS.
+              Um sistema pensado para negócio real: atendimento do dia, clientes recorrentes e agenda pronta para crescer com SaaS.
             </p>
           </div>
         </div>
@@ -22,4 +22,3 @@ export const AuthLayout = ({ children }) => {
     </div>
   );
 };
-

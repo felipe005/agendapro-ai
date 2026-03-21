@@ -45,10 +45,10 @@ export const LoginPage = () => {
           {mode === "login" ? "Entrar" : "Criar conta"}
         </p>
         <h2 className="mt-3 text-4xl font-bold text-white">
-          Controle sua agenda e prepare seu negocio para vender mais.
+          Controle sua agenda e prepare seu negócio para vender mais.
         </h2>
         <p className="mt-4 text-slate-400">
-          Entre com seu email ou crie sua conta para comecar.
+          Entre com seu e-mail ou crie sua conta para começar.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -71,7 +71,7 @@ export const LoginPage = () => {
               value={form.password}
               onChange={(e) => setForm((current) => ({ ...current, password: e.target.value }))}
               className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white"
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               required
             />
           </div>
@@ -93,11 +93,10 @@ export const LoginPage = () => {
           className="mt-5 text-sm text-slate-300 hover:text-white"
         >
           {mode === "login"
-            ? "Ainda nao tem conta? Clique para criar."
-            : "Ja tem conta? Clique para entrar."}
+            ? "Ainda não tem conta? Clique para criar."
+            : "Já tem conta? Clique para entrar."}
         </button>
       </div>
     </AuthLayout>
   );
 };
-

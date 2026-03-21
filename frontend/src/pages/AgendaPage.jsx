@@ -127,7 +127,7 @@ export const AgendaPage = () => {
     <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
       <Panel
         title={editingId ? "Editar agendamento" : "Novo agendamento"}
-        subtitle="Organize horarios, servicos e acompanhe o status de cada atendimento."
+        subtitle="Organize horários, serviços e acompanhe o status de cada atendimento."
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <select
@@ -165,7 +165,7 @@ export const AgendaPage = () => {
             value={form.serviceName}
             onChange={(e) => setForm((current) => ({ ...current, serviceName: e.target.value }))}
             className="w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white"
-            placeholder="Servico"
+            placeholder="Serviço"
             required
           />
 
@@ -183,7 +183,7 @@ export const AgendaPage = () => {
             value={form.notes}
             onChange={(e) => setForm((current) => ({ ...current, notes: e.target.value }))}
             className="min-h-28 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white"
-            placeholder="Observacoes opcionais"
+            placeholder="Observações opcionais"
           />
 
           {message && <p className="rounded-2xl bg-brand-500/10 p-4 text-sm text-brand-200">{message}</p>}
@@ -191,7 +191,7 @@ export const AgendaPage = () => {
 
           <div className="flex gap-3">
             <button className="rounded-2xl bg-brand-500 px-4 py-3 font-semibold text-slate-950 hover:bg-brand-400">
-              {editingId ? "Salvar alteracoes" : "Criar agendamento"}
+              {editingId ? "Salvar alterações" : "Criar agendamento"}
             </button>
             {editingId && (
               <button
@@ -199,7 +199,7 @@ export const AgendaPage = () => {
                 onClick={resetForm}
                 className="rounded-2xl border border-white/10 px-4 py-3 text-slate-200 hover:text-white"
               >
-                Cancelar edicao
+                Cancelar edição
               </button>
             )}
           </div>
@@ -208,7 +208,7 @@ export const AgendaPage = () => {
 
       <Panel
         title="Agenda do dia"
-        subtitle="Veja os horarios da data escolhida e gerencie rapidamente."
+        subtitle="Veja os horários da data escolhida e gerencie rapidamente."
         action={
           <input
             type="date"
@@ -266,4 +266,3 @@ export const AgendaPage = () => {
     </div>
   );
 };
-

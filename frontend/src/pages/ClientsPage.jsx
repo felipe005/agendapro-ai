@@ -90,7 +90,7 @@ export const ClientsPage = () => {
     <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
       <Panel
         title={editingId ? "Editar cliente" : "Novo cliente"}
-        subtitle="Cadastre clientes para organizar retorno, observacoes e contatos."
+        subtitle="Cadastre clientes para organizar retorno, observações e contatos."
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -111,7 +111,7 @@ export const ClientsPage = () => {
             value={form.notes}
             onChange={(e) => setForm((current) => ({ ...current, notes: e.target.value }))}
             className="min-h-28 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-white"
-            placeholder="Observacoes importantes"
+            placeholder="Observações importantes"
           />
 
           {message && <p className="rounded-2xl bg-brand-500/10 p-4 text-sm text-brand-200">{message}</p>}
@@ -119,7 +119,7 @@ export const ClientsPage = () => {
 
           <div className="flex gap-3">
             <button className="rounded-2xl bg-brand-500 px-4 py-3 font-semibold text-slate-950 hover:bg-brand-400">
-              {editingId ? "Salvar alteracoes" : "Criar cliente"}
+              {editingId ? "Salvar alterações" : "Criar cliente"}
             </button>
             {editingId && (
               <button
@@ -134,7 +134,7 @@ export const ClientsPage = () => {
         </form>
       </Panel>
 
-      <Panel title="Base de clientes" subtitle="Clientes cadastrados no seu negocio.">
+      <Panel title="Base de clientes" subtitle="Clientes cadastrados no seu negócio.">
         <div className="space-y-3">
           {!clients.length ? (
             <p className="text-slate-400">Nenhum cliente cadastrado ainda.</p>

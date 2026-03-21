@@ -32,17 +32,17 @@ export const DashboardPage = () => {
         <StatCard
           title="Atendimentos do dia"
           value={summary.todayAppointments}
-          hint="Sua operacao diaria em um olhar rapido."
+          hint="Sua operação diária em um olhar rápido."
         />
         <StatCard
-          title="Proximos agendamentos"
+          title="Próximos agendamentos"
           value={summary.upcomingAppointments.length}
-          hint="Os 5 proximos horarios ativos aparecem abaixo."
+          hint="Os 5 próximos horários ativos aparecem abaixo."
         />
       </section>
 
       <Panel
-        title="Proximos atendimentos"
+        title="Próximos atendimentos"
         subtitle="Acompanhe o que vem a seguir para manter a agenda fluindo."
       >
         {error && <p className="rounded-2xl bg-red-500/10 p-4 text-sm text-red-200">{error}</p>}
@@ -71,4 +71,3 @@ export const DashboardPage = () => {
     </div>
   );
 };
-
