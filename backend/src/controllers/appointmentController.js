@@ -20,6 +20,10 @@ export const appointmentController = {
   cancel: catchAsync(async (req, res) => {
     const appointment = await appointmentService.cancel(req.user.id, req.params.id);
     res.json(appointment);
+  }),
+
+  complete: catchAsync(async (req, res) => {
+    const appointment = await appointmentService.complete(req.user.id, req.params.id);
+    res.json(appointment);
   })
 };
-

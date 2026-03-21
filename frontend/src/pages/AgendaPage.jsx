@@ -23,6 +23,7 @@ const initialForm = {
 const statusLabels = {
   PENDING: "Pendente",
   CONFIRMED: "Confirmado",
+  COMPLETED: "Atendida",
   CANCELED: "Cancelado"
 };
 
@@ -185,6 +186,20 @@ export const AgendaPage = () => {
     }
   };
 
+  const handleComplete = async (id) => {
+    try {
+      await http.request(`/appointments/${id}/complete`, {
+        method: "PATCH",
+        token
+      });
+      setMessage("Atendimento marcado como concluído.");
+      loadAppointments(selectedDate);
+      loadAvailability(selectedDate);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
   return (
     <div className="grid gap-6 xl:grid-cols-[440px_1fr]">
       <Panel
@@ -263,6 +278,7 @@ export const AgendaPage = () => {
           >
             <option value="PENDING">Pendente</option>
             <option value="CONFIRMED">Confirmado</option>
+            <option value="COMPLETED">Atendida</option>
             <option value="CANCELED">Cancelado</option>
           </select>
 
@@ -348,6 +364,14 @@ export const AgendaPage = () => {
                   </div>
 
                   <div className="flex gap-2">
+                    {appointment.status !== "COMPLETED" && appointment.status !== "CANCELED" && (
+                      <button
+                        onClick={() => handleComplete(appointment.id)}
+                        className="rounded-2xl border border-brand-500/30 px-4 py-2 text-sm text-brand-200 hover:bg-brand-500/10"
+                      >
+                        Atendida
+                      </button>
+                    )}
                     <button
                       onClick={() => handleEdit(appointment)}
                       className="rounded-2xl border border-white/10 px-4 py-2 text-sm text-slate-200 hover:text-white"

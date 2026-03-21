@@ -7,6 +7,6 @@ router.post("/", appointmentController.create);
 router.get("/", appointmentController.listByDay);
 router.put("/:id", appointmentController.update);
 router.patch("/:id/cancel", appointmentController.cancel);
+router.patch("/:id/complete", appointmentController.complete);
 
 export default router;
-

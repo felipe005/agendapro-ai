@@ -189,5 +189,26 @@ export const appointmentService = {
         service: true
       }
     });
+  },
+
+  async complete(userId, appointmentId) {
+    const appointment = await prisma.appointment.findFirst({
+      where: { id: appointmentId, userId }
+    });
+
+    if (!appointment) {
+      throw new ApiError(404, "Agendamento nao encontrado.");
+    }
+
+    return prisma.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status: AppointmentStatus.COMPLETED
+      },
+      include: {
+        client: true,
+        service: true
+      }
+    });
   }
 };
