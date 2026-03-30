@@ -17,6 +17,20 @@ const sanitizeBusinessHour = (item) => ({
   weekdayLabel: weekdayNames[item.weekday]
 });
 
+const defaultBusinessHours = Array.from({ length: 7 }, (_, weekday) =>
+  sanitizeBusinessHour({
+    weekday,
+    isOpen: weekday >= 1 && weekday <= 5,
+    startTime: "09:00",
+    endTime: "18:00"
+  })
+);
+
+const ensureWeekHours = (hours = []) => {
+  const byWeekday = new Map(hours.map((item) => [item.weekday, sanitizeBusinessHour(item)]));
+  return defaultBusinessHours.map((item) => byWeekday.get(item.weekday) || item);
+};
+
 const normalizeHours = (hours = []) =>
   hours
     .map((item) => ({
@@ -57,6 +71,8 @@ export const companyService = {
           companyName: true,
           businessType: true,
           businessPhone: true,
+          autoSendAppointmentMessage: true,
+          appointmentMessageTemplate: true,
           timezone: true
         }
       }),
@@ -76,7 +92,7 @@ export const companyService = {
         ...service,
         price: Number(service.price)
       })),
-      businessHours: businessHours.map(sanitizeBusinessHour)
+      businessHours: ensureWeekHours(businessHours)
     };
   },
 
@@ -88,6 +104,8 @@ export const companyService = {
         companyName: data.companyName?.trim() || null,
         businessType: data.businessType?.trim() || null,
         businessPhone: data.businessPhone?.trim() || null,
+        autoSendAppointmentMessage: Boolean(data.autoSendAppointmentMessage),
+        appointmentMessageTemplate: data.appointmentMessageTemplate?.trim() || null,
         timezone: data.timezone?.trim() || "America/Sao_Paulo"
       },
       select: {
@@ -97,6 +115,8 @@ export const companyService = {
         companyName: true,
         businessType: true,
         businessPhone: true,
+        autoSendAppointmentMessage: true,
+        appointmentMessageTemplate: true,
         timezone: true
       }
     });
@@ -144,7 +164,7 @@ export const companyService = {
     });
 
     return {
-      businessHours: updated.map(sanitizeBusinessHour)
+      businessHours: ensureWeekHours(updated)
     };
   },
 

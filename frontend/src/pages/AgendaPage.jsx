@@ -143,12 +143,21 @@ export const AgendaPage = () => {
         });
         setMessage("Agendamento atualizado com sucesso.");
       } else {
-        await http.request("/appointments", {
+        const response = await http.request("/appointments", {
           method: "POST",
           token,
           body: JSON.stringify(payload)
         });
-        setMessage("Agendamento criado com sucesso.");
+
+        if (response.notification?.provider === "disabled") {
+          setMessage(
+            "Agendamento criado com sucesso. A mensagem automatica esta pronta, mas a integracao do WhatsApp ainda nao foi configurada."
+          );
+        } else if (response.notification) {
+          setMessage("Agendamento criado com sucesso e mensagem automatica preparada para envio ao cliente.");
+        } else {
+          setMessage("Agendamento criado com sucesso.");
+        }
       }
 
       resetForm();

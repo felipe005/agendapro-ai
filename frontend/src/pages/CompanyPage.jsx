@@ -9,6 +9,8 @@ const emptyProfile = {
   companyName: "",
   businessType: "",
   businessPhone: "",
+  autoSendAppointmentMessage: false,
+  appointmentMessageTemplate: "",
   timezone: "America/Sao_Paulo"
 };
 
@@ -27,6 +29,8 @@ export const CompanyPage = () => {
         companyName: data.profile.companyName || "",
         businessType: data.profile.businessType || "",
         businessPhone: data.profile.businessPhone || "",
+        autoSendAppointmentMessage: Boolean(data.profile.autoSendAppointmentMessage),
+        appointmentMessageTemplate: data.profile.appointmentMessageTemplate || "",
         timezone: data.profile.timezone || "America/Sao_Paulo"
       });
       setHours(data.businessHours);
@@ -103,6 +107,48 @@ export const CompanyPage = () => {
             placeholder="Telefone / WhatsApp"
           />
 
+          <div className="md:col-span-2 rounded-3xl border border-white/10 bg-slate-950/70 p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-base font-semibold text-white">Mensagem automatica de confirmacao</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  Quando ativada, o sistema monta essa mensagem assim que um novo agendamento e criado.
+                </p>
+              </div>
+
+              <label className="flex items-center gap-3 text-sm text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={profile.autoSendAppointmentMessage}
+                  onChange={(e) =>
+                    setProfile((current) => ({
+                      ...current,
+                      autoSendAppointmentMessage: e.target.checked
+                    }))
+                  }
+                />
+                Ativar envio automatico
+              </label>
+            </div>
+
+            <textarea
+              value={profile.appointmentMessageTemplate}
+              onChange={(e) =>
+                setProfile((current) => ({
+                  ...current,
+                  appointmentMessageTemplate: e.target.value
+                }))
+              }
+              className="mt-4 min-h-32 w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white"
+              placeholder="Ex.: Ola, {cliente}. Seu horario para {servico} ficou marcado em {data} as {hora}."
+            />
+
+            <p className="mt-3 text-xs leading-6 text-slate-400">
+              Variaveis disponiveis: {"{cliente}"}, {"{empresa}"}, {"{servico}"}, {"{data}"}, {"{hora}"},{" "}
+              {"{status}"}, {"{telefoneEmpresa}"} e {"{observacoes}"}.
+            </p>
+          </div>
+
           <div className="md:col-span-2 flex gap-3">
             <button className="rounded-2xl bg-brand-500 px-4 py-3 font-semibold text-slate-950 hover:bg-brand-400">
               Salvar perfil
@@ -114,6 +160,12 @@ export const CompanyPage = () => {
       </Panel>
 
       <Panel title="Horários de funcionamento" subtitle="Liberte apenas os horários em que a empresa realmente atende.">
+        {!hours.length && (
+          <p className="mb-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+            Os 7 dias ainda nao foram carregados. Atualize a pagina ou salve novamente o perfil da empresa.
+          </p>
+        )}
+
         <div className="space-y-3">
           {hours.map((item, index) => (
             <div
