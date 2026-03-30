@@ -41,6 +41,9 @@ const normalizeHours = (hours = []) =>
     }))
     .sort((a, b) => a.weekday - b.weekday);
 
+const defaultBusinessHourByWeekday = (weekday) =>
+  defaultBusinessHours.find((item) => item.weekday === weekday) || null;
+
 const validateTimeRange = (item) => {
   if (!Number.isInteger(item.weekday) || item.weekday < 0 || item.weekday > 6) {
     throw new ApiError(400, "Dia da semana invalido.");
@@ -126,8 +129,9 @@ export const companyService = {
 
   async updateBusinessHours(userId, hours) {
     const normalized = normalizeHours(hours);
+    const uniqueWeekdays = new Set(normalized.map((item) => item.weekday));
 
-    if (normalized.length !== 7) {
+    if (normalized.length !== 7 || uniqueWeekdays.size !== 7) {
       throw new ApiError(400, "Configure os 7 dias da semana.");
     }
 
@@ -198,12 +202,21 @@ export const companyService = {
       })
     ]);
 
-    if (!businessHour?.isOpen) {
-      return { slots: [], businessHour: businessHour ? sanitizeBusinessHour(businessHour) : null, services };
+    const effectiveBusinessHour = businessHour || defaultBusinessHourByWeekday(weekday);
+
+    if (!effectiveBusinessHour?.isOpen) {
+      return {
+        slots: [],
+        businessHour: effectiveBusinessHour ? sanitizeBusinessHour(effectiveBusinessHour) : null,
+        services: services.map((service) => ({
+          ...service,
+          price: Number(service.price)
+        }))
+      };
     }
 
-    const start = timeToMinutes(businessHour.startTime);
-    const end = timeToMinutes(businessHour.endTime);
+    const start = timeToMinutes(effectiveBusinessHour.startTime);
+    const end = timeToMinutes(effectiveBusinessHour.endTime);
     const occupied = new Set(appointments.map((appointment) => minutesToTime(appointment.scheduledAt.getHours() * 60 + appointment.scheduledAt.getMinutes())));
     const slots = [];
 
@@ -217,7 +230,7 @@ export const companyService = {
 
     return {
       slots,
-      businessHour: sanitizeBusinessHour(businessHour),
+      businessHour: sanitizeBusinessHour(effectiveBusinessHour),
       services: services.map((service) => ({
         ...service,
         price: Number(service.price)
