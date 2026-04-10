@@ -1,240 +1,115 @@
-# AgendaPro AI
+# Catwalk AI Studio
 
-Sistema SaaS para saloes de beleza, barbearias e profissionais autonomos gerenciarem clientes, agenda e uma base futura para automacao via WhatsApp.
+Plataforma focada em moda para transformar a foto de uma roupa em um video de modelo desfilando com qualidade premium.
+
+## O que este projeto entrega
+
+- frontend novo com identidade visual de produto de moda/IA
+- upload da foto da roupa
+- formulario de direcao criativa para campanha, ecommerce e social
+- backend com fila de geracao integrada a `fal.ai`
+- suporte a dois perfis de modelo:
+  - `Veo 3.1 Fast` para uma saida mais premium
+  - `Vidu Q1` para uma opcao mais rapida
+- polling de status e visualizacao do video final
+- modo demonstracao automatico quando `FAL_KEY` nao estiver configurada
 
 ## Stack
 
-- Backend: Node.js + Express
-- Banco: PostgreSQL
-- ORM: Prisma
 - Frontend: React + Vite
-- Autenticacao: JWT
-- Estilos: TailwindCSS
+- Backend: Node.js + Express
+- Upload: Multer em memoria
+- Provedor de video: fal.ai
 
 ## Estrutura
 
 ```text
-agendapro-ai/
-  backend/
-  frontend/
-  render.yaml
+backend/
+frontend/
+render.yaml
 ```
 
-## Como rodar localmente
+## Como rodar
 
-### 1. Requisitos
-
-- Node.js 20+
-- PostgreSQL instalado e rodando
-- Git instalado
-
-### 2. Clone ou abra o projeto
-
-```bash
-git clone <url-do-seu-repositorio>
-cd agendapro-ai
-```
-
-### 3. Instale as dependencias
+### 1. Instalar dependencias
 
 ```bash
 npm run install:all
 ```
 
-Ou, se preferir:
-
-```bash
-cd backend && npm install
-cd ../frontend && npm install
-```
-
-### 4. Configure o backend
-
-Copie o arquivo de exemplo:
-
-```bash
-cd backend
-cp .env.example .env
-```
-
-No Windows PowerShell:
+### 2. Configurar ambiente do backend
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item backend\.env.example backend\.env
 ```
 
-Edite o `.env` com sua conexao PostgreSQL:
+Variaveis:
 
 ```env
-DATABASE_URL="postgresql://postgres:senha@localhost:5432/agendapro_ai?schema=public"
-JWT_SECRET="coloque-uma-chave-segura-aqui"
 PORT=4000
-CLIENT_URL="http://localhost:5173"
-WHATSAPP_PROVIDER="disabled"
-WHATSAPP_API_URL=""
-WHATSAPP_API_TOKEN=""
+CLIENT_URL=http://localhost:5173
+FAL_KEY=
 ```
 
-### 5. Gere o Prisma e crie as tabelas
+Se `FAL_KEY` ficar vazio, a aplicacao entra em modo demonstracao e usa um video oficial de exemplo da fal.ai para a experiencia de ponta a ponta.
 
-```bash
-cd backend
-npx prisma generate
-npx prisma db push
-```
-
-Se quiser abrir o painel visual do Prisma:
-
-```bash
-npx prisma studio
-```
-
-### 6. Rode o backend
-
-```bash
-cd backend
-npm run dev
-```
-
-O backend sobe em `http://localhost:4000`.
-
-### 7. Configure e rode o frontend
-
-Copie o arquivo de exemplo:
-
-```bash
-cd frontend
-cp .env.example .env
-```
-
-No Windows PowerShell:
+### 3. Configurar ambiente do frontend
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item frontend\.env.example frontend\.env
 ```
 
-Depois rode:
+```env
+VITE_API_URL=http://localhost:4000
+```
+
+### 4. Rodar em desenvolvimento
+
+Terminal 1:
 
 ```bash
-cd frontend
-npm run dev
+npm run dev:backend
 ```
 
-O frontend sobe em `http://localhost:5173`.
-
-## Scripts importantes
-
-### Backend
-
-- `npm run dev`: ambiente de desenvolvimento com `nodemon`
-- `npm start`: usado no deploy
-- `npm run prisma:generate`: gera o client do Prisma
-- `npm run prisma:push`: cria/atualiza tabelas no banco
-
-### Frontend
-
-- `npm run dev`: ambiente de desenvolvimento
-- `npm run build`: build de producao
-- `npm run preview`: visualizacao local do build
-
-## Como subir no GitHub
-
-### 1. Criar repositorio no GitHub
-
-- Entre em [GitHub](https://github.com)
-- Clique em `New repository`
-- Dê um nome, por exemplo: `agendapro-ai`
-- Crie o repositorio sem subir arquivos automaticamente
-
-### 2. Conectar este projeto ao GitHub
-
-No terminal, dentro da pasta raiz do projeto:
+Terminal 2:
 
 ```bash
-git init
-git add .
-git commit -m "feat: initial AgendaPro AI"
-git branch -M main
-git remote add origin <url-do-repositorio>
-git push -u origin main
+npm run dev:frontend
 ```
 
-Exemplo de URL:
+Frontend: `http://localhost:5173`
 
-```bash
-git remote add origin https://github.com/seu-usuario/agendapro-ai.git
-```
+Backend: `http://localhost:4000`
 
-Se voce quiser, eu posso fazer essa parte com voce no proximo passo, inclusive revisando cada comando antes de rodar.
+## Integracao real com fal.ai
 
-## Como fazer deploy no Render
+Este projeto usa a documentacao oficial da fal.ai para `image-to-video`:
 
-Voce pode fazer o deploy de duas partes:
+- `fal-ai/veo3.1/fast/image-to-video`
+- `fal-ai/vidu/q1/image-to-video`
 
-### Backend no Render
+O backend envia a imagem como `data URI`, monta um prompt otimizado para moda e acompanha o status da fila ate receber a URL final do video.
 
-1. Crie uma conta em [Render](https://render.com)
-2. Clique em `New +` > `Web Service`
-3. Conecte o repositorio do GitHub
-4. Escolha a pasta `backend`
-5. Configure:
-   - Build Command: `npm install && npx prisma generate`
-   - Start Command: `npm start`
-6. Adicione as variaveis de ambiente:
-   - `DATABASE_URL`
-   - `JWT_SECRET`
-   - `PORT`
-   - `CLIENT_URL`
-   - `WHATSAPP_PROVIDER`
-   - `WHATSAPP_API_URL`
-   - `WHATSAPP_API_TOKEN`
+## Endpoints
 
-### Banco PostgreSQL no Render
+- `GET /api/health`
+- `GET /api/meta`
+- `GET /api/generations`
+- `POST /api/generations`
+- `GET /api/generations/:id`
 
-1. Clique em `New +` > `PostgreSQL`
-2. Crie o banco
-3. Copie a `External Database URL`
-4. Cole no `DATABASE_URL` do backend
+## Deploy no Render
 
-Depois rode uma vez no shell do Render:
+O arquivo [`render.yaml`](C:\Users\User\Desktop\projeto S\render.yaml) ja foi atualizado com:
 
-```bash
-npx prisma db push
-```
+- API Node em `backend/`
+- site estatico em `frontend/`
+- variaveis `CLIENT_URL`, `FAL_KEY` e `VITE_API_URL`
 
-### Frontend no Render
+## Ideias de evolucao
 
-1. Clique em `New +` > `Static Site`
-2. Escolha o mesmo repositorio
-3. Selecione a pasta `frontend`
-4. Configure:
-   - Build Command: `npm install && npm run build`
-   - Publish Directory: `dist`
-5. Adicione:
-   - `VITE_API_URL` = URL publica do backend
-
-## Funcionalidades entregues
-
-- Cadastro e login com JWT
-- Rotas protegidas
-- CRUD de clientes
-- CRUD de agendamentos
-- Dashboard com resumo do dia e proximos agendamentos
-- Estrutura inicial para WhatsApp com `whatsappService.sendMessage(phone, message)`
-
-## Proximos upgrades que combinam com esse projeto
-
-- Confirmacao automatica por WhatsApp
-- Lembretes antes do horario agendado
-- Multiempresa com assinatura mensal
-- Relatorios financeiros
-- Pagamento online
-- Tela publica para autoagendamento
-
-## Observacao
-
-Este projeto esta preparado para crescer sem ficar baguncado. Se voce quiser, no proximo passo eu posso:
-
-1. instalar as dependencias aqui no ambiente
-2. subir o banco e testar tudo
-3. te ajudar a publicar no GitHub de forma guiada e simples
+1. autenticacao e creditos por geracao
+2. biblioteca de assets por marca
+3. variacoes automaticas de cenario e camera
+4. exportacao de multiplos formatos por campanha
+5. fila persistente com banco de dados e webhook

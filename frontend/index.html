@@ -3,11 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgendaPro AI</title>
+    <meta
+      name="description"
+      content="Catwalk AI Studio transforma uma foto de roupa em um video premium de modelo desfilando."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Catwalk AI Studio</title>
   </head>
-  <body class="bg-slate-950">
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+  <body>
+    <script>
+      window.__API_URL__ = "__VITE_API_URL__";
+    </script>
+    <div id="app"></div>
+    <script type="module" src="./script.js"></script>
   </body>
 </html>
-

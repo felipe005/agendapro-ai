@@ -4,4 +4,3 @@ export class ApiError extends Error {
     this.statusCode = statusCode;
   }
 }
-
