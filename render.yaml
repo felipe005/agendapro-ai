@@ -1,24 +1,16 @@
 services:
   - type: web
-    name: catwalk-ai-api
+    name: catwalk-ai-studio
     env: node
-    rootDir: backend
-    buildCommand: npm install
+    rootDir: .
+    buildCommand: npm run build:render
     startCommand: npm start
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: PORT
         value: 10000
-      - key: CLIENT_URL
-        sync: false
       - key: FAL_KEY
         sync: false
-
-  - type: web
-    name: catwalk-ai-web
-    env: static
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    envVars:
-      - key: VITE_API_URL
+      - key: CLIENT_URL
         sync: false

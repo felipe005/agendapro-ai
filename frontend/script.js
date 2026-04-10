@@ -1,4 +1,4 @@
-const API_URL = window.__API_URL__ && !window.__API_URL__.startsWith("__") ? window.__API_URL__ : "http://localhost:4000";
+const API_URL = window.__API_URL__ && !window.__API_URL__.startsWith("__") ? window.__API_URL__ : "";
 
 const defaults = {
   brandName: "Maison Nova",

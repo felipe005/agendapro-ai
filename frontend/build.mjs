@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "dist");
-const apiUrl = process.env.VITE_API_URL || "http://localhost:4000";
+const apiUrl = process.env.VITE_API_URL || "";
 
 await rm(distDir, { recursive: true, force: true });
 await mkdir(distDir, { recursive: true });

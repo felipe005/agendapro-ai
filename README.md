@@ -13,10 +13,11 @@ Plataforma focada em moda para transformar a foto de uma roupa em um video de mo
   - `Vidu Q1` para uma opcao mais rapida
 - polling de status e visualizacao do video final
 - modo demonstracao automatico quando `FAL_KEY` nao estiver configurada
+- deploy simplificado no Render com um unico servico
 
 ## Stack
 
-- Frontend: React + Vite
+- Frontend: HTML, CSS e JavaScript servidos pelo backend
 - Backend: Node.js + Express
 - Upload: Multer em memoria
 - Provedor de video: fal.ai
@@ -29,7 +30,7 @@ frontend/
 render.yaml
 ```
 
-## Como rodar
+## Como rodar localmente
 
 ### 1. Instalar dependencias
 
@@ -47,23 +48,13 @@ Variaveis:
 
 ```env
 PORT=4000
-CLIENT_URL=http://localhost:5173
+CLIENT_URL=
 FAL_KEY=
 ```
 
 Se `FAL_KEY` ficar vazio, a aplicacao entra em modo demonstracao e usa um video oficial de exemplo da fal.ai para a experiencia de ponta a ponta.
 
-### 3. Configurar ambiente do frontend
-
-```powershell
-Copy-Item frontend\.env.example frontend\.env
-```
-
-```env
-VITE_API_URL=http://localhost:4000
-```
-
-### 4. Rodar em desenvolvimento
+### 3. Rodar em desenvolvimento
 
 Terminal 1:
 
@@ -81,6 +72,32 @@ Frontend: `http://localhost:5173`
 
 Backend: `http://localhost:4000`
 
+## Deploy no Render
+
+O projeto agora esta pronto para uso com **um unico Web Service**.
+
+### Passos no Render
+
+1. Crie um novo `Web Service`
+2. Conecte este repositorio
+3. O Render pode ler automaticamente o arquivo [`render.yaml`](C:\Users\User\Desktop\projeto S\render.yaml)
+4. Adicione a variavel obrigatoria:
+   - `FAL_KEY` = sua chave da fal.ai
+5. Opcional:
+   - `CLIENT_URL` = URL publica final do projeto, se quiser restringir CORS explicitamente
+6. Faça o deploy
+
+### O que acontece no deploy
+
+- o Render instala backend e frontend
+- gera o frontend estatico em `frontend/dist`
+- sobe o backend Node
+- o backend serve a API e o frontend no mesmo dominio
+
+### Depois do deploy
+
+Basta abrir a URL do servico no Render e usar.
+
 ## Integracao real com fal.ai
 
 Este projeto usa a documentacao oficial da fal.ai para `image-to-video`:
@@ -97,14 +114,6 @@ O backend envia a imagem como `data URI`, monta um prompt otimizado para moda e 
 - `GET /api/generations`
 - `POST /api/generations`
 - `GET /api/generations/:id`
-
-## Deploy no Render
-
-O arquivo [`render.yaml`](C:\Users\User\Desktop\projeto S\render.yaml) ja foi atualizado com:
-
-- API Node em `backend/`
-- site estatico em `frontend/`
-- variaveis `CLIENT_URL`, `FAL_KEY` e `VITE_API_URL`
 
 ## Ideias de evolucao
 
