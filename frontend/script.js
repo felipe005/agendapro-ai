@@ -8,6 +8,11 @@ const symbolCatalog = {
 };
 
 const spinOrder = Object.keys(symbolCatalog);
+const initialBoard = [
+  ["rat", "coin", "diamond"],
+  ["cheese", "rat", "crown"],
+  ["bell", "diamond", "rat"]
+];
 
 const winningLine = [
   [0, 0],
@@ -15,34 +20,18 @@ const winningLine = [
   [0, 2]
 ];
 
-const initialBoard = [
-  ["rat", "coin", "diamond"],
-  ["cheese", "rat", "crown"],
-  ["bell", "diamond", "rat"]
-];
-
 const state = {
-  balance: 1000,
-  bet: 200,
   spinCount: 0,
   isSpinning: false,
   showOverlay: false,
-  lastWin: 0,
-  totalWon: 0,
-  message: "Voce ganhou R$ 1.000 ficticios para brincar. O primeiro giro ja vem premiado.",
+  highlightWin: false,
+  wheelAngle: 0,
   reels: initialBoard,
+  status: "Toque no botao e veja o painel ganhar vida.",
   history: []
 };
 
 const app = document.querySelector("#app");
-
-function formatMoney(value) {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 0
-  });
-}
 
 function randomSymbolKey() {
   return spinOrder[Math.floor(Math.random() * spinOrder.length)];
@@ -52,7 +41,7 @@ function createRandomBoard() {
   return Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => randomSymbolKey()));
 }
 
-function createFirstWinBoard() {
+function createHeroBoard() {
   return [
     ["rat", "rat", "rat"],
     ["diamond", "coin", "diamond"],
@@ -60,25 +49,8 @@ function createFirstWinBoard() {
   ];
 }
 
-function renderHistory() {
-  if (!state.history.length) {
-    return `<p class="empty-history">Os ultimos giros vao aparecer aqui.</p>`;
-  }
-
-  return state.history
-    .map(
-      (item) => `
-        <li class="history-item">
-          <strong>${item.title}</strong>
-          <span>${item.text}</span>
-        </li>
-      `
-    )
-    .join("");
-}
-
 function isWinningCell(rowIndex, colIndex) {
-  if (!state.lastWin) return false;
+  if (!state.highlightWin) return false;
   return winningLine.some(([row, column]) => row === rowIndex && column === colIndex);
 }
 
@@ -108,6 +80,23 @@ function renderBoard() {
             )
             .join("")}
         </div>
+      `
+    )
+    .join("");
+}
+
+function renderHistory() {
+  if (!state.history.length) {
+    return `<p class="empty-history">As ultimas combinacoes aparecem aqui.</p>`;
+  }
+
+  return state.history
+    .map(
+      (item) => `
+        <li class="history-item">
+          <strong>${item.title}</strong>
+          <span>${item.text}</span>
+        </li>
       `
     )
     .join("");
@@ -144,8 +133,6 @@ function renderRatIllustration() {
       <path d="M141 355c31-22 70-33 89-33 69 0 112 55 112 109v21H117v-17c0-34 8-56 24-80z" fill="#342422" />
       <path d="M137 351c24-17 61-28 93-28 81 0 131 53 131 124v11H134v-30c0-32 3-52 3-77z" fill="url(#furMain)" filter="url(#shadowSoft)" />
       <path d="M179 358c15 12 33 18 52 18 21 0 41-7 58-21 0 0 14 18 14 52H164c0-29 15-49 15-49z" fill="#2c1e1b" opacity="0.72" />
-      <path d="M153 120c-20-48 10-88 54-88 28 0 48 14 58 39-12 15-18 39-18 39z" fill="#7e6460" />
-      <path d="M307 120c20-48-10-88-54-88-28 0-48 14-58 39 12 15 18 39 18 39z" fill="#6d5551" opacity="0" />
       <path d="M149 120c-17-53 16-95 65-95 34 0 59 18 69 49-17 10-35 26-46 46z" fill="#8d7069" />
       <path d="M311 120c17-53-16-95-65-95-34 0-59 18-69 49 17 10 35 26 46 46z" fill="#8a6c65" />
       <ellipse cx="155" cy="84" rx="44" ry="50" fill="#846761" />
@@ -162,14 +149,10 @@ function renderRatIllustration() {
 
       <path d="M189 227c16 19 28 28 41 28 14 0 27-9 41-28" fill="none" stroke="#4a322d" stroke-linecap="round" stroke-width="7" />
       <ellipse cx="230" cy="204" rx="34" ry="25" fill="url(#noseGlow)" />
-      <ellipse cx="230" cy="201" rx="15" ry="10" fill="#93495d" opacity="0.52" />
       <path d="M198 203c-24 6-43 13-69 26" fill="none" stroke="#ceb7b0" stroke-linecap="round" stroke-width="4" />
       <path d="M261 203c24 6 43 13 69 26" fill="none" stroke="#ceb7b0" stroke-linecap="round" stroke-width="4" />
       <path d="M201 214c-27 12-44 20-66 38" fill="none" stroke="#ceb7b0" stroke-linecap="round" stroke-width="4" />
       <path d="M259 214c27 12 44 20 66 38" fill="none" stroke="#ceb7b0" stroke-linecap="round" stroke-width="4" />
-      <path d="M207 226c-20 16-33 28-49 47" fill="none" stroke="#ceb7b0" stroke-linecap="round" stroke-width="4" />
-      <path d="M253 226c20 16 33 28 49 47" fill="none" stroke="#ceb7b0" stroke-linecap="round" stroke-width="4" />
-
       <rect x="205" y="245" width="20" height="36" rx="6" fill="#fef7ef" />
       <rect x="235" y="245" width="20" height="36" rx="6" fill="#fef7ef" />
 
@@ -178,157 +161,90 @@ function renderRatIllustration() {
       <path d="M128 367c16-22 61-40 102-40 47 0 86 16 102 40" fill="none" stroke="url(#goldChain)" stroke-linecap="round" stroke-width="15" />
       <path d="M119 392c18-24 69-41 111-41 50 0 92 17 111 41" fill="none" stroke="url(#goldChain)" stroke-linecap="round" stroke-width="17" />
       <circle cx="230" cy="395" r="26" fill="url(#goldChain)" />
-      <circle cx="230" cy="395" r="15" fill="#8b5600" opacity="0.26" />
-      <rect x="206" y="383" width="48" height="22" rx="11" fill="rgba(255,255,255,0.28)" />
     </svg>
   `;
 }
 
-function render() {
-  const canSpin = !state.isSpinning && state.balance >= state.bet && !state.showOverlay;
+function renderWheel() {
+  const items = ["RT", "CR", "DM", "MO", "SN", "QJ"];
 
+  return `
+    <div class="wheel-wrap">
+      <div class="wheel-pointer"></div>
+      <div class="wheel" style="transform: rotate(${state.wheelAngle}deg);">
+        ${items
+          .map(
+            (item, index) => `
+              <span class="wheel-slice slice-${index + 1}">
+                <b>${item}</b>
+              </span>
+            `
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function render() {
   app.innerHTML = `
     <div class="page-shell">
       <div class="light light-left"></div>
       <div class="light light-right"></div>
 
-      <section class="hero-panel">
-        <div class="hero-copy">
-          <p class="eyebrow">Demo segura</p>
-          <h1>Ratinho Dourado</h1>
-          <p class="hero-text">
-            Uma brincadeira de slot com aparencia mais realista, maquina mais pesada e um rato de respeito comandando o premio ficticio.
-          </p>
-
-          <div class="hero-stats">
-            <article class="stat-card">
-              <strong>${formatMoney(state.balance)}</strong>
-              <span>saldo ficticio</span>
-            </article>
-            <article class="stat-card">
-              <strong>${formatMoney(state.bet)}</strong>
-              <span>aposta por giro</span>
-            </article>
-            <article class="stat-card">
-              <strong>${formatMoney(state.totalWon)}</strong>
-              <span>premios da brincadeira</span>
-            </article>
+      <main class="mobile-shell">
+        <section class="hero-card">
+          <div class="hero-topline">
+            <span class="eyebrow">Ratinho Dourado</span>
+            <span class="micro-badge">interface ficticia</span>
           </div>
-        </div>
+          <h1>Visual limpo, brilho alto, toque rapido.</h1>
+          <p class="hero-text">${state.status}</p>
+          ${renderWheel()}
+        </section>
 
-        <div class="rat-stage">
-          <div class="rat-card">
+        <section class="stage-card">
+          <div class="rat-frame">
             <div class="rat-spotlight"></div>
             <div class="rat-floor"></div>
             ${renderRatIllustration()}
-            <div class="rat-caption">
-              <strong>Patrao do jackpot falso</strong>
-              <span>Mais volume, mais brilho e aquela energia de mascote suspeitamente confiante.</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <main class="content-grid">
-        <section class="machine-panel">
-          <div class="panel-heading">
-            <p class="eyebrow">Mesa principal</p>
-            <h2>Gire o Ratinho</h2>
-          </div>
-
-          <div class="machine-shell ${state.isSpinning ? "spinning" : ""}">
-            <div class="cabinet-lights" aria-hidden="true">
-              ${Array.from({ length: 12 }, (_, index) => `<span style="--light-index:${index}"></span>`).join("")}
-            </div>
-
-            <div class="machine-top">
-              <span class="jackpot-label">jackpot da zoeira</span>
-              <strong>${formatMoney(5000)}</strong>
-            </div>
-
-            <div class="machine-body">
-              <div class="machine-screen">
-                <div class="machine-reflection"></div>
-                <div class="reels-board">
-                  ${renderBoard()}
-                </div>
-              </div>
-
-              <div class="machine-lever" aria-hidden="true">
-                <div class="lever-handle"></div>
-                <div class="lever-stem"></div>
-                <div class="lever-base"></div>
-              </div>
-            </div>
-
-            <div class="machine-footer">
-              <div class="credit-pill">
-                <span>saldo</span>
-                <strong>${formatMoney(state.balance)}</strong>
-              </div>
-
-              <div class="credit-pill">
-                <span>ultimo premio</span>
-                <strong>${state.lastWin ? formatMoney(state.lastWin) : "R$ 0"}</strong>
-              </div>
-            </div>
-
-            <div class="machine-controls">
-              <label class="bet-box">
-                <span>Aposta</span>
-                <select id="bet-select" ${state.isSpinning || state.showOverlay ? "disabled" : ""}>
-                  ${[50, 100, 200, 500]
-                    .map(
-                      (value) => `
-                        <option value="${value}" ${value === state.bet ? "selected" : ""}>
-                          ${formatMoney(value)}
-                        </option>
-                      `
-                    )
-                    .join("")}
-                </select>
-              </label>
-
-              <button id="spin-button" class="spin-button" ${canSpin ? "" : "disabled"}>
-                ${state.isSpinning ? "Girando..." : "Puxar alavanca"}
-              </button>
-            </div>
-          </div>
-
-          <div class="message-card">
-            <strong>Recado do rato</strong>
-            <p>${state.message}</p>
           </div>
         </section>
 
-        <aside class="info-panel">
-          <div class="panel-heading">
-            <p class="eyebrow">Clima da brincadeira</p>
-            <h2>Como essa demo funciona</h2>
+        <section class="panel-card">
+          <div class="panel-top">
+            <div>
+              <p class="section-label">Painel</p>
+              <h2>Giro visual</h2>
+            </div>
+            <button id="spin-button" class="spin-button" ${state.isSpinning ? "disabled" : ""}>
+              ${state.isSpinning ? "Girando..." : "Girar"}
+            </button>
           </div>
 
-          <div class="info-card">
-            <strong>Entrada liberada</strong>
-            <p>Quem abrir a pagina ja recebe um saldo ficticio de R$ 1.000 para testar sem precisar conectar nada.</p>
+          <div class="machine-screen ${state.isSpinning ? "spinning" : ""}">
+            <div class="machine-reflection"></div>
+            <div class="reels-board">
+              ${renderBoard()}
+            </div>
           </div>
+        </section>
 
-          <div class="info-card">
-            <strong>Primeiro giro premiado</strong>
-            <p>Na primeira jogada o rato entrega R$ 5.000 de mentira e acende a linha vencedora no topo.</p>
+        <section class="history-card">
+          <div class="panel-top compact">
+            <div>
+              <p class="section-label">Colecao</p>
+              <h2>Ultimos giros</h2>
+            </div>
           </div>
+          <ul class="history-list">
+            ${renderHistory()}
+          </ul>
+        </section>
 
-          <div class="info-card safe">
-            <strong>Sem deposito, sem banco</strong>
-            <p>A experiencia termina no premio de demo. Continua sendo uma brincadeira local, sem cobranca e sem fluxo real.</p>
-          </div>
-
-          <div class="history-card">
-            <strong>Historico</strong>
-            <ul class="history-list">
-              ${renderHistory()}
-            </ul>
-          </div>
-        </aside>
+        <footer class="footer-note">
+          Visual mobile-first com animacao decorativa e interface ficticia.
+        </footer>
       </main>
 
       ${
@@ -336,12 +252,10 @@ function render() {
           ? `
             <div class="overlay">
               <div class="overlay-card">
-                <p class="eyebrow">Fim da demo</p>
-                <h2>${formatMoney(5000)} caiu na conta ficticia</h2>
-                <p>
-                  O rato encerrou o show. Se quiser repetir a cena com seu amigo, e so reiniciar a brincadeira.
-                </p>
-                <button id="reset-button" class="reset-button">Reiniciar brincadeira</button>
+                <p class="section-label">Destaque</p>
+                <h2>Sequencia dourada liberada</h2>
+                <p>O painel travou na linha principal e a roleta completou a cena.</p>
+                <button id="reset-button" class="reset-button">Repetir visual</button>
               </div>
             </div>
           `
@@ -354,11 +268,6 @@ function render() {
 }
 
 function bindEvents() {
-  document.querySelector("#bet-select")?.addEventListener("change", (event) => {
-    state.bet = Number(event.target.value);
-    render();
-  });
-
   document.querySelector("#spin-button")?.addEventListener("click", spin);
   document.querySelector("#reset-button")?.addEventListener("click", resetGame);
 }
@@ -368,48 +277,39 @@ function registerHistory(title, text) {
 }
 
 function spin() {
-  if (state.isSpinning || state.showOverlay || state.balance < state.bet) return;
+  if (state.isSpinning) return;
 
   state.isSpinning = true;
-  state.lastWin = 0;
-  state.balance -= state.bet;
-  state.message = "O rato esta observando os rolos e deixando o brilho da maquina trabalhar...";
+  state.highlightWin = false;
+  state.showOverlay = false;
+  state.spinCount += 1;
+  state.wheelAngle += 540 + state.spinCount * 35;
+  state.status = "A roleta entrou em movimento e o painel ganhou reflexo novo.";
   state.reels = createRandomBoard();
   render();
 
   window.setTimeout(() => {
-    state.spinCount += 1;
-
-    if (state.spinCount === 1) {
-      state.lastWin = 5000;
-      state.totalWon += state.lastWin;
-      state.balance += state.lastWin;
-      state.reels = createFirstWinBoard();
-      state.message = "Premio maximo de brincadeira liberado. Demo encerrada com estilo.";
+    if (state.spinCount % 2 === 1) {
+      state.reels = createHeroBoard();
+      state.highlightWin = true;
+      state.status = "Linha principal acesa. O rato puxou o foco para o topo.";
       state.showOverlay = true;
-      registerHistory("Primeiro giro", `Voce recebeu ${formatMoney(state.lastWin)} em saldo ficticio.`);
+      registerHistory("Sequencia dourada", "Topo alinhado com tres simbolos do rato.");
     } else {
       state.reels = createRandomBoard();
-      state.message = "O show principal ja passou. Reinicie a demo se quiser repetir a entrada cinematografica.";
-      registerHistory("Giro extra", "A demo segura nao oferece novos premios depois da rodada especial.");
+      state.status = "Nova composicao criada. O painel segue em modo visual.";
+      registerHistory("Giro livre", "Combinacao renovada com brilho mais discreto.");
     }
 
     state.isSpinning = false;
     render();
-  }, 1500);
+  }, 1400);
 }
 
 function resetGame() {
-  state.balance = 1000;
-  state.bet = 200;
-  state.spinCount = 0;
-  state.isSpinning = false;
   state.showOverlay = false;
-  state.lastWin = 0;
-  state.totalWon = 0;
-  state.message = "Voce ganhou R$ 1.000 ficticios para brincar. O primeiro giro ja vem premiado.";
-  state.reels = initialBoard;
-  state.history = [];
+  state.highlightWin = false;
+  state.status = "Toque no botao e veja o painel ganhar vida.";
   render();
 }
 
