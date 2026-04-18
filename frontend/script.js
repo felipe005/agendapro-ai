@@ -1,411 +1,320 @@
-const API_URL = window.__API_URL__ && !window.__API_URL__.startsWith("__") ? window.__API_URL__ : "";
+const symbols = [
+  { icon: "🐭", name: "Ratinho" },
+  { icon: "🧀", name: "Queijo" },
+  { icon: "🪙", name: "Moeda" },
+  { icon: "💎", name: "Brilho" },
+  { icon: "👑", name: "Coroa" },
+  { icon: "🔔", name: "Sino" }
+];
 
-const defaults = {
-  brandName: "Maison Nova",
-  garmentType: "pants",
-  garmentDescription: "calca de alfaiataria preta, cintura alta, caimento reto e tecido premium",
-  styleNotes: "editorial de luxo, elegancia contemporanea, passos confiantes",
-  targetAudience: "marcas de moda premium e ecommerce",
-  motionStyle: "luxury",
-  cameraStyle: "editorial",
-  backgroundStyle: "noir",
-  aspectRatio: "9:16",
-  duration: "8s",
-  resolution: "720p",
-  movementAmplitude: "auto",
-  modelKey: "premium"
-};
-
-const featureCards = [
-  {
-    title: "Foto para passarela",
-    text: "Envie a foto da roupa e gere um fashion film com foco no caimento real da peca."
-  },
-  {
-    title: "Prompt especializado",
-    text: "A UI monta um briefing pensado para moda, preservando textura, costura, cor e silhueta."
-  },
-  {
-    title: "Pipeline pronto para venda",
-    text: "Interface premium, API com fila e estrutura preparada para deploy e evolucao comercial."
-  }
+const paylines = [
+  [0, 0, 0],
+  [1, 1, 1],
+  [2, 2, 2]
 ];
 
 const state = {
-  meta: { demoMode: true, models: [] },
-  form: { ...defaults },
-  jobs: [],
-  activeJobId: "",
-  imageFile: null,
-  imagePreview: "",
-  isSubmitting: false,
-  error: ""
+  balance: 1000,
+  bet: 200,
+  spinCount: 0,
+  isSpinning: false,
+  showOverlay: false,
+  lastWin: 0,
+  totalWon: 0,
+  message: "Voce ganhou R$ 1.000 ficticios para brincar. O primeiro giro ja vem premiado.",
+  reels: [
+    ["🐭", "🪙", "💎"],
+    ["🧀", "🐭", "👑"],
+    ["🔔", "💎", "🐭"]
+  ],
+  history: []
 };
 
 const app = document.querySelector("#app");
-let pollingInterval = null;
 
-function optionsHtml(options, current) {
-  return options
-    .map((option) => `<option value="${option.value}" ${option.value === current ? "selected" : ""}>${option.label}</option>`)
+function formatMoney(value) {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 0
+  });
+}
+
+function randomSymbol() {
+  return symbols[Math.floor(Math.random() * symbols.length)].icon;
+}
+
+function createRandomBoard() {
+  return Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => randomSymbol()));
+}
+
+function createFirstWinBoard() {
+  return [
+    ["🐭", "🐭", "🐭"],
+    ["💎", "🪙", "💎"],
+    ["🧀", "👑", "🔔"]
+  ];
+}
+
+function renderHistory() {
+  if (!state.history.length) {
+    return `<p class="empty-history">Os ultimos giros vao aparecer aqui.</p>`;
+  }
+
+  return state.history
+    .map(
+      (item) => `
+        <li class="history-item">
+          <strong>${item.title}</strong>
+          <span>${item.text}</span>
+        </li>
+      `
+    )
     .join("");
 }
 
+function renderBoard() {
+  return state.reels
+    .map(
+      (row, rowIndex) => `
+        <div class="reel-row">
+          ${row
+            .map(
+              (symbol, colIndex) => `
+                <div class="reel-cell ${isWinningCell(rowIndex, colIndex) ? "winner" : ""}">
+                  <span>${symbol}</span>
+                </div>
+              `
+            )
+            .join("")}
+        </div>
+      `
+    )
+    .join("");
+}
+
+function isWinningCell(rowIndex, colIndex) {
+  if (!state.lastWin) return false;
+  return paylines[0].every((row, index) => row === rowIndex && index === colIndex);
+}
+
 function render() {
-  const activeJob = state.jobs.find((job) => job.id === state.activeJobId) || state.jobs[0];
-  const modelOptions = state.meta.models.length
-    ? state.meta.models
-    : [
-        { value: "premium", label: "Veo 3.1 Fast" },
-        { value: "fast", label: "Vidu Q1" }
-      ];
+  const canSpin = !state.isSpinning && state.balance >= state.bet && !state.showOverlay;
 
   app.innerHTML = `
     <div class="page-shell">
-      <div class="ambient ambient-left"></div>
-      <div class="ambient ambient-right"></div>
+      <div class="light light-left"></div>
+      <div class="light light-right"></div>
 
-      <header class="hero">
+      <section class="hero-panel">
         <div class="hero-copy">
-          <p class="eyebrow">Catwalk AI Studio</p>
-          <h1>Transforme a foto de uma roupa em um video de modelo desfilando.</h1>
+          <p class="eyebrow">Demo segura</p>
+          <h1>Ratinho Dourado</h1>
           <p class="hero-text">
-            Produto novo, com cara de marca premium e estrutura pronta para virar ferramenta comercial para moda,
-            ecommerce e conteudo social.
+            Uma brincadeira de slot com clima exagerado, saldo falso e premio de mentira para voce testar com um amigo.
           </p>
 
-          <div class="stats-row">
-            <div class="stat-card"><strong>Foto -> video</strong><span>pipeline principal</span></div>
-            <div class="stat-card"><strong>${state.meta.demoMode ? "Demo ligado" : "Fal pronto"}</strong><span>status do provedor</span></div>
-            <div class="stat-card"><strong>9:16 ou 16:9</strong><span>formatos de campanha</span></div>
+          <div class="hero-stats">
+            <article class="stat-card">
+              <strong>${formatMoney(state.balance)}</strong>
+              <span>saldo ficticio</span>
+            </article>
+            <article class="stat-card">
+              <strong>${formatMoney(state.bet)}</strong>
+              <span>aposta por giro</span>
+            </article>
+            <article class="stat-card">
+              <strong>${formatMoney(state.totalWon)}</strong>
+              <span>premios da brincadeira</span>
+            </article>
           </div>
         </div>
 
-        <div class="hero-panel glass-card">
-          <span class="chip">Moda + IA generativa</span>
-          <div class="hero-preview">
-            <div class="preview-gradient"></div>
-            <div class="preview-runway"></div>
-            <div class="preview-caption">
-              <strong>Use cases</strong>
-              <span>catalogo animado, criativos de ads, lancamentos e videos curtos para social.</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main class="content-grid">
-        <section class="story-panel">
-          <div class="section-heading">
-            <p class="eyebrow">O que estamos entregando</p>
-            <h2>Uma base diferente dos projetos iguais.</h2>
-          </div>
-
-          <div class="feature-grid">
-            ${featureCards
-              .map(
-                (card) => `
-                  <article class="glass-card feature-card">
-                    <h3>${card.title}</h3>
-                    <p>${card.text}</p>
-                  </article>
-                `
-              )
-              .join("")}
-          </div>
-
-          <div class="glass-card workflow-card">
-            <div class="section-heading compact">
-              <p class="eyebrow">Fluxo</p>
-              <h2>Como a plataforma funciona</h2>
-            </div>
-            <ol>
-              <li>Recebe a imagem da roupa e converte para referencia visual.</li>
-              <li>Monta um prompt otimizado para passarela e fidelidade do tecido.</li>
-              <li>Envia para geracao em fila e acompanha o status da renderizacao.</li>
-              <li>Entrega o video final pronto para revisar, baixar ou publicar.</li>
-            </ol>
-          </div>
-        </section>
-
-        <section class="creator-panel glass-card">
-          <div class="section-heading compact">
-            <p class="eyebrow">Criador</p>
-            <h2>Monte o video</h2>
-          </div>
-
-          <form id="generation-form" class="creator-form">
-            <div class="upload-box">
-              <input id="image-upload" type="file" accept="image/*" />
-              <div>
-                <strong>Envie a foto da peca</strong>
-                <p>Funciona melhor com fundo limpo, luz uniforme e a roupa bem enquadrada.</p>
+        <div class="rat-stage">
+          <div class="rat-card">
+            <div class="rat-spotlight"></div>
+            <div class="rat-figure" aria-hidden="true">
+              <div class="ear ear-left"></div>
+              <div class="ear ear-right"></div>
+              <div class="rat-head">
+                <div class="eye eye-left"></div>
+                <div class="eye eye-right"></div>
+                <div class="nose"></div>
+                <div class="tooth tooth-left"></div>
+                <div class="tooth tooth-right"></div>
+                <div class="chain chain-top"></div>
+                <div class="chain chain-mid"></div>
+                <div class="chain chain-bottom"></div>
               </div>
-              ${state.imagePreview ? `<img src="${state.imagePreview}" alt="Preview da roupa" class="upload-preview" />` : ""}
+              <div class="rat-body"></div>
             </div>
-
-            <div class="form-grid">
-              ${textField("Marca", "brandName", state.form.brandName, "Maison Nova")}
-              ${selectField("Tipo de peca", "garmentType", state.form.garmentType, [
-                ["pants", "Calca"],
-                ["jeans", "Jeans"],
-                ["skirt", "Saia"],
-                ["dress", "Vestido"],
-                ["jacket", "Jaqueta"],
-                ["shirt", "Camisa"],
-                ["shoes", "Calcado"],
-                ["fullLook", "Look completo"]
-              ])}
-              ${textField("Descricao da roupa", "garmentDescription", state.form.garmentDescription, "calca preta de alfaiataria, reta, premium")}
-              ${textField("Publico ou canal", "targetAudience", state.form.targetAudience, "ecommerce de luxo, Instagram Reels")}
-              ${selectField("Estilo de movimento", "motionStyle", state.form.motionStyle, [
-                ["elegant", "Elegante"],
-                ["bold", "Bold"],
-                ["street", "Street film"],
-                ["luxury", "Luxury runway"]
-              ])}
-              ${selectField("Camera", "cameraStyle", state.form.cameraStyle, [
-                ["frontal", "Frontal"],
-                ["orbit", "Orbital"],
-                ["side", "Lateral"],
-                ["editorial", "Editorial"]
-              ])}
-              ${selectField("Cenario", "backgroundStyle", state.form.backgroundStyle, [
-                ["studio", "Studio clean"],
-                ["city", "Cidade premium"],
-                ["noir", "Noir fashion"],
-                ["sunset", "Sunset show"]
-              ])}
-              ${selectField("Modelo de geracao", "modelKey", state.form.modelKey, modelOptions.map((item) => [item.value, item.label]))}
-              ${selectField("Formato", "aspectRatio", state.form.aspectRatio, [["9:16", "Vertical 9:16"], ["16:9", "Horizontal 16:9"]])}
-              ${selectField("Duracao", "duration", state.form.duration, [["4s", "4 segundos"], ["6s", "6 segundos"], ["8s", "8 segundos"]])}
-              ${selectField("Resolucao", "resolution", state.form.resolution, [["720p", "720p"], ["1080p", "1080p"]])}
-              ${selectField("Amplitude de movimento", "movementAmplitude", state.form.movementAmplitude, [["auto", "Auto"], ["small", "Suave"], ["medium", "Media"], ["large", "Grande"]])}
+            <div class="rat-caption">
+              <strong>Rato cheio dos cordoes</strong>
+              <span>Carisma duvidoso, brilho impecavel e sorte programada no primeiro giro.</span>
             </div>
-
-            ${textAreaField("Direcao criativa", "styleNotes", state.form.styleNotes, "editorial luxuoso, passos confiantes, acabamento premium")}
-
-            ${state.error ? `<p class="error-message">${state.error}</p>` : ""}
-
-            <button class="primary-button" type="submit" ${state.isSubmitting ? "disabled" : ""}>
-              ${state.isSubmitting ? "Enviando para a fila..." : "Gerar video de passarela"}
-            </button>
-
-            <p class="helper-text">
-              ${state.meta.demoMode
-                ? "Sem FAL_KEY no backend, a plataforma roda em modo demonstracao com um video oficial de exemplo da fal.ai."
-                : "FAL_KEY detectada. As geracoes vao para a fila real da fal.ai."}
-            </p>
-          </form>
-        </section>
-      </main>
-
-      <section class="results-grid">
-        <div class="glass-card results-panel">
-          <div class="section-heading compact">
-            <p class="eyebrow">Resultado</p>
-            <h2>Monitor de geracoes</h2>
           </div>
-
-          ${state.jobs.length === 0 ? `<p class="empty-state">A primeira geracao vai aparecer aqui com status, preview da imagem e video final.</p>` : `
-            <div class="job-list">
-              ${state.jobs
-                .map(
-                  (job) => `
-                    <button type="button" class="job-card ${activeJob && activeJob.id === job.id ? "active" : ""}" data-job-id="${job.id}">
-                      <img src="${job.previewImage}" alt="${job.name}" />
-                      <div>
-                        <strong>${job.brandName || "Projeto fashion"}</strong>
-                        <span>${job.status}</span>
-                        <small>${job.provider}</small>
-                      </div>
-                    </button>
-                  `
-                )
-                .join("")}
-            </div>
-          `}
-        </div>
-
-        <div class="glass-card viewer-panel">
-          <div class="section-heading compact">
-            <p class="eyebrow">Viewer</p>
-            <h2>${activeJob ? "Video gerado" : "Aguardando projeto"}</h2>
-          </div>
-
-          ${!activeJob ? `<p class="empty-state">Suba a imagem da roupa e inicie a primeira renderizacao para abrir o viewer.</p>` : `
-            <div class="status-line">
-              <span class="status-pill status-${(activeJob.status || "queued").toLowerCase()}">${activeJob.status}</span>
-              <span>${activeJob.providerStatus || "Fila em andamento"}</span>
-            </div>
-
-            ${activeJob.videoUrl ? `<video class="video-player" controls src="${activeJob.videoUrl}"></video>` : `
-              <div class="video-placeholder">
-                <p>Renderizando o fashion film.</p>
-                <span>O painel consulta o status automaticamente a cada poucos segundos.</span>
-              </div>
-            `}
-
-            <div class="prompt-box">
-              <strong>Prompt criado automaticamente</strong>
-              <p>${activeJob.prompt || "O prompt aparece aqui assim que a geracao for iniciada."}</p>
-            </div>
-          `}
         </div>
       </section>
+
+      <main class="content-grid">
+        <section class="machine-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Mesa principal</p>
+            <h2>Gire o Ratinho</h2>
+          </div>
+
+          <div class="machine-shell ${state.isSpinning ? "spinning" : ""}">
+            <div class="machine-top">
+              <span class="jackpot-label">jackpot da zoeira</span>
+              <strong>${formatMoney(5000)}</strong>
+            </div>
+
+            <div class="reels-board">
+              ${renderBoard()}
+            </div>
+
+            <div class="machine-controls">
+              <label class="bet-box">
+                <span>Aposta</span>
+                <select id="bet-select" ${state.isSpinning || state.showOverlay ? "disabled" : ""}>
+                  ${[50, 100, 200, 500]
+                    .map(
+                      (value) => `
+                        <option value="${value}" ${value === state.bet ? "selected" : ""}>
+                          ${formatMoney(value)}
+                        </option>
+                      `
+                    )
+                    .join("")}
+                </select>
+              </label>
+
+              <button id="spin-button" class="spin-button" ${canSpin ? "" : "disabled"}>
+                ${state.isSpinning ? "Girando..." : "Puxar alavanca"}
+              </button>
+            </div>
+          </div>
+
+          <div class="message-card">
+            <strong>Recado do rato</strong>
+            <p>${state.message}</p>
+          </div>
+        </section>
+
+        <aside class="info-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Clima da brincadeira</p>
+            <h2>Como essa demo funciona</h2>
+          </div>
+
+          <div class="info-card">
+            <strong>Entrada liberada</strong>
+            <p>Quem abrir a pagina ja recebe um saldo ficticio de R$ 1.000 para testar.</p>
+          </div>
+
+          <div class="info-card">
+            <strong>Primeiro giro premiado</strong>
+            <p>Na primeira jogada o rato entrega R$ 5.000 de mentira e faz a entrada triunfal.</p>
+          </div>
+
+          <div class="info-card safe">
+            <strong>Sem deposito, sem banco</strong>
+            <p>A experiencia para por ai. Depois do premio aparece um aviso de fim de demo, sem cobrar nada.</p>
+          </div>
+
+          <div class="history-card">
+            <strong>Historico</strong>
+            <ul class="history-list">
+              ${renderHistory()}
+            </ul>
+          </div>
+        </aside>
+      </main>
+
+      ${
+        state.showOverlay
+          ? `
+            <div class="overlay">
+              <div class="overlay-card">
+                <p class="eyebrow">Fim da demo</p>
+                <h2>${formatMoney(5000)} caiu na conta ficticia</h2>
+                <p>
+                  O rato ja fez o show dele. Para continuar a brincadeira, combine a proxima rodada pessoalmente com seu amigo.
+                </p>
+                <button id="reset-button" class="reset-button">Reiniciar brincadeira</button>
+              </div>
+            </div>
+          `
+          : ""
+      }
     </div>
   `;
 
   bindEvents();
 }
 
-function textField(label, name, value, placeholder) {
-  return `
-    <label class="field">
-      <span>${label}</span>
-      <input name="${name}" value="${escapeHtml(value)}" placeholder="${placeholder}" />
-    </label>
-  `;
-}
-
-function textAreaField(label, name, value, placeholder) {
-  return `
-    <label class="field">
-      <span>${label}</span>
-      <textarea name="${name}" rows="4" placeholder="${placeholder}">${escapeHtml(value)}</textarea>
-    </label>
-  `;
-}
-
-function selectField(label, name, current, items) {
-  const options = items.map(([value, text]) => ({ value, label: text }));
-  return `
-    <label class="field">
-      <span>${label}</span>
-      <select name="${name}">${optionsHtml(options, current)}</select>
-    </label>
-  `;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
 function bindEvents() {
-  const form = document.querySelector("#generation-form");
-  const upload = document.querySelector("#image-upload");
-
-  document.querySelectorAll("input[name], textarea[name], select[name]").forEach((element) => {
-    element.addEventListener("input", (event) => {
-      state.form[event.target.name] = event.target.value;
-    });
-  });
-
-  upload?.addEventListener("change", (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    state.imageFile = file;
-    state.imagePreview = URL.createObjectURL(file);
+  document.querySelector("#bet-select")?.addEventListener("change", (event) => {
+    state.bet = Number(event.target.value);
     render();
   });
 
-  document.querySelectorAll("[data-job-id]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      state.activeJobId = button.dataset.jobId;
-      render();
-      await refreshActiveJob();
-    });
-  });
-
-  form?.addEventListener("submit", handleSubmit);
+  document.querySelector("#spin-button")?.addEventListener("click", spin);
+  document.querySelector("#reset-button")?.addEventListener("click", resetGame);
 }
 
-async function handleSubmit(event) {
-  event.preventDefault();
-  state.error = "";
+function registerHistory(title, text) {
+  state.history = [{ title, text }, ...state.history].slice(0, 4);
+}
 
-  if (!state.imageFile) {
-    state.error = "Envie a foto da roupa antes de gerar o video.";
-    render();
-    return;
-  }
+function spin() {
+  if (state.isSpinning || state.showOverlay || state.balance < state.bet) return;
 
-  state.isSubmitting = true;
+  state.isSpinning = true;
+  state.lastWin = 0;
+  state.balance -= state.bet;
+  state.message = "O rato esta sacudindo os cordoes e preparando o resultado...";
+  state.reels = createRandomBoard();
   render();
 
-  const payload = new FormData();
-  payload.append("image", state.imageFile);
+  window.setTimeout(() => {
+    state.spinCount += 1;
 
-  Object.entries(state.form).forEach(([key, value]) => {
-    payload.append(key, value);
-  });
-
-  try {
-    const response = await fetch(`${API_URL}/api/generations`, {
-      method: "POST",
-      body: payload
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Nao foi possivel iniciar a geracao.");
+    if (state.spinCount === 1) {
+      state.lastWin = 5000;
+      state.totalWon += state.lastWin;
+      state.balance += state.lastWin;
+      state.reels = createFirstWinBoard();
+      state.message = "Premio maximo de brincadeira liberado. Demo encerrada com estilo.";
+      state.showOverlay = true;
+      registerHistory("Primeiro giro", `Voce recebeu ${formatMoney(state.lastWin)} em saldo ficticio.`);
+    } else {
+      state.reels = createRandomBoard();
+      state.message = "O rato ja fez a cena principal. Reinicie se quiser repetir a brincadeira.";
+      registerHistory("Giro extra", "A demo segura nao oferece novos premios depois da entrada especial.");
     }
 
-    state.jobs = [data, ...state.jobs.filter((job) => job.id !== data.id)];
-    state.activeJobId = data.id;
-    startPolling();
-  } catch (error) {
-    state.error = error.message;
-  } finally {
-    state.isSubmitting = false;
+    state.isSpinning = false;
     render();
-  }
+  }, 1500);
 }
 
-function startPolling() {
-  if (pollingInterval) clearInterval(pollingInterval);
-  pollingInterval = setInterval(refreshActiveJob, 7000);
-}
-
-async function refreshActiveJob() {
-  if (!state.activeJobId) return;
-
-  const response = await fetch(`${API_URL}/api/generations/${state.activeJobId}`);
-  const job = await response.json();
-
-  state.jobs = [job, ...state.jobs.filter((item) => item.id !== job.id)];
-
-  if (job.status === "COMPLETED" && pollingInterval) {
-    clearInterval(pollingInterval);
-    pollingInterval = null;
-  }
-
+function resetGame() {
+  state.balance = 1000;
+  state.bet = 200;
+  state.spinCount = 0;
+  state.isSpinning = false;
+  state.showOverlay = false;
+  state.lastWin = 0;
+  state.totalWon = 0;
+  state.message = "Voce ganhou R$ 1.000 ficticios para brincar. O primeiro giro ja vem premiado.";
+  state.reels = [
+    ["🐭", "🪙", "💎"],
+    ["🧀", "🐭", "👑"],
+    ["🔔", "💎", "🐭"]
+  ];
+  state.history = [];
   render();
 }
 
-async function loadMeta() {
-  try {
-    const [metaResponse, jobsResponse] = await Promise.all([
-      fetch(`${API_URL}/api/meta`),
-      fetch(`${API_URL}/api/generations`)
-    ]);
-
-    const meta = await metaResponse.json();
-    const jobs = await jobsResponse.json();
-
-    state.meta = meta;
-    state.jobs = jobs.items || [];
-  } catch {
-    state.meta = { demoMode: true, models: [] };
-  }
-
-  render();
-}
-
-loadMeta();
+render();
